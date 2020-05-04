@@ -11,3 +11,6 @@ bitflags = "1.2"
 nix = "0.17"
 num_enum = "0.4"
 libbpf-sys = { version = "0.0.8-2" }
+
+[dev-dependencies]
+libc = "0.2"

@@ -146,6 +146,7 @@ version = "0.1.0"
 dependencies = [
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libbpf-sys 0.0.8-2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.68 (registry+https://github.com/rust-lang/crates.io-index)",
  "nix 0.17.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_enum 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 1.0.15 (registry+https://github.com/rust-lang/crates.io-index)",
