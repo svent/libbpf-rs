@@ -186,3 +186,29 @@ fn test_object_programs() {
         .expect("failed to find program");
     assert!(obj.prog("asdf").expect("error finding program").is_none());
 }
+
+#[test]
+fn test_object_programs_load() {
+    let mut obj = get_test_object();
+
+    let wakeup = obj
+        .prog("handle__sched_wakeup")
+        .expect("error finding program")
+        .expect("failed to find program")
+        .load()
+        .expect("failed to load handle__sched_wakeup");
+
+    let wakeup_new = obj
+        .prog("handle__sched_wakeup_new")
+        .expect("error finding program")
+        .expect("failed to find program")
+        .load()
+        .expect("failed to load handle__sched_wakeup_new");
+
+    let switch = obj
+        .prog("handle__sched_switch")
+        .expect("error finding program")
+        .expect("failed to find program")
+        .load()
+        .expect("failed to load handle__sched_switch");
+}
