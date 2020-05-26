@@ -28,6 +28,33 @@ impl ObjectBuilder {
         self
     }
 
+    /// Option to print debug output to stderr.
+    ///
+    /// I haven't figured out how to call fprintf() from rust yet so for now this will
+    /// just print the format string.
+    pub fn set_debug(&mut self, dbg: bool) -> &mut Self {
+        extern "C" fn cb(
+            _level: libbpf_sys::libbpf_print_level,
+            fmtstr: *const c_char,
+            _va_list: *mut libbpf_sys::__va_list_tag,
+        ) -> i32 {
+            match util::c_ptr_to_string(fmtstr) {
+                Ok(s) => eprintln!("{}", s),
+                Err(e) => eprintln!("Failed to parse string: {}", e),
+            };
+
+            0
+        }
+
+        if dbg {
+            unsafe { libbpf_sys::libbpf_set_print(Some(cb)) };
+        } else {
+            unsafe { libbpf_sys::libbpf_set_print(None) };
+        }
+
+        self
+    }
+
     fn opts(&mut self, name: *const c_char) -> libbpf_sys::bpf_object_open_opts {
         libbpf_sys::bpf_object_open_opts {
             sz: mem::size_of::<libbpf_sys::bpf_object_open_opts>() as libbpf_sys::size_t,
