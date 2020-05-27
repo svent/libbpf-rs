@@ -10,7 +10,8 @@ thiserror = "1.0"
 bitflags = "1.2"
 nix = "0.17"
 num_enum = "0.4"
-libbpf-sys = { version = "0.0.8-2" }
+#libbpf-sys = { version = "0.0.8-2" }
+libbpf-sys = { git = "https://github.com/danobi/libbpf-sys.git", branch = "bpf_object_btf_load" }
 
 [dev-dependencies]
 libc = "0.2"
