@@ -98,10 +98,15 @@ impl ObjectBuilder {
 
         let obj = unsafe { libbpf_sys::bpf_object__open_file(path_ptr, &opts) };
         if obj.is_null() {
-            Err(Error::Internal("Could not create bpf_object".to_string()))
-        } else {
-            Ok(Object::new(obj))
+            return Err(Error::Internal("Could not create bpf_object".to_string()));
         }
+
+        let ret = unsafe { libbpf_sys::bpf_object__load(obj) };
+        if ret != 0 {
+            return Err(Error::Internal("Could not load bpf_object".to_string()));
+        }
+
+        Ok(Object::new(obj))
     }
 
     pub fn from_memory<T: AsRef<str>>(&mut self, name: T, mem: &[u8]) -> Result<Object> {
@@ -125,10 +130,15 @@ impl ObjectBuilder {
             )
         };
         if obj.is_null() {
-            Err(Error::Internal("Could not create bpf_object".to_string()))
-        } else {
-            Ok(Object::new(obj))
+            return Err(Error::Internal("Could not create bpf_object".to_string()));
         }
+
+        let ret = unsafe { libbpf_sys::bpf_object__load(obj) };
+        if ret != 0 {
+            return Err(Error::Internal("Could not load bpf_object".to_string()));
+        }
+
+        Ok(Object::new(obj))
     }
 }
 
