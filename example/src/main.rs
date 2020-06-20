@@ -10,6 +10,9 @@ use libbpf_rs::{MapFlags, ObjectBuilder, PerfBufferBuilder};
 use plain::Plain;
 use structopt::StructOpt;
 
+static BPF_PROG: &'static [u8] =
+    include_bytes!(concat!(env!("CARGO_OUT_DIR"), "/bpf/runqslower.bpf.o"));
+
 /// Trace high run queue latency
 #[derive(Debug, StructOpt)]
 struct Command {
@@ -70,11 +73,6 @@ fn handle_lost_events(cpu: i32, count: u64) {
 fn main() {
     let opts = Command::from_args();
 
-    if !opts.obj_path.as_path().exists() {
-        eprintln!("{} does not exist", opts.obj_path.as_path().display());
-        exit(1);
-    }
-
     let mut obj_builder = ObjectBuilder::default();
     if opts.verbose {
         obj_builder.debug(true);
@@ -82,7 +80,7 @@ fn main() {
 
     bump_memlock_rlimit().unwrap();
     let mut obj = obj_builder
-        .open_file(opts.obj_path)
+        .open_memory("runqslower.bpf.o", BPF_PROG)
         .unwrap()
         .load()
         .unwrap();
