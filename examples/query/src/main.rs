@@ -17,25 +17,36 @@ enum Command {
 
 fn prog() {
     for prog in query::ProgInfoIter::default() {
-        println!(
-            "name={:<16} type={:<15} run_count={:<2} runtime_ns={}",
-            prog.name,
-            prog.ty.to_string(),
-            prog.run_cnt,
-            prog.run_time_ns
-        );
+        match prog {
+            Ok(p) => {
+                println!(
+                    "name={:<16} type={:<15} run_count={:<2} runtime_ns={}",
+                    p.name,
+                    p.ty.to_string(),
+                    p.run_cnt,
+                    p.run_time_ns
+                );
+            }
+            Err(e) => eprintln!("Error: {}", e),
+        }
     }
 }
 
 fn map() {
     for map in query::MapInfoIter::default() {
-        println!("name={:<16} type={}", map.name, map.ty.to_string(),);
+        match map {
+            Ok(m) => println!("name={:<16} type={}", m.name, m.ty.to_string(),),
+            Err(e) => eprintln!("Error: {}", e),
+        }
     }
 }
 
 fn btf() {
     for btf in query::BtfInfoIter::default() {
-        println!("id={:4} size={}", btf.id, btf.btf_size);
+        match btf {
+            Ok(b) => println!("id={:4} size={}", b.id, b.btf_size),
+            Err(e) => eprintln!("Error: {}", e),
+        }
     }
 }
 

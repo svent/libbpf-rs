@@ -31,34 +31,41 @@ macro_rules! gen_info_impl {
         }
 
         impl $name {
-            // Returns Some(next_valid_fd), None on none left
-            fn get_next_valid_fd(&mut self) -> Option<i32> {
+            // Returns Ok(Some(next_valid_fd)), Ok(None) on none left, Err(_) on errors
+            fn get_next_valid_fd(&mut self) -> Result<Option<i32>> {
                 loop {
                     if unsafe { $next_id(self.cur_id, &mut self.cur_id) } != 0 {
-                        return None;
+                        let errno = errno::errno();
+                        if errno == errno::Errno::ENOENT as i32 {
+                            return Ok(None);
+                        } else {
+                            return Err(Error::System(errno));
+                        }
                     }
 
                     let fd = unsafe { $fd_by_id(self.cur_id) };
                     if fd < 0 {
-                        if errno::errno() == errno::Errno::ENOENT as i32 {
+                        let errno = errno::errno();
+                        if errno == errno::Errno::ENOENT as i32 {
                             continue;
                         }
 
-                        return None;
+                        return Err(Error::System(errno));
                     }
 
-                    return Some(fd);
+                    return Ok(Some(fd));
                 }
             }
         }
 
         impl Iterator for $name {
-            type Item = $info_ty;
+            type Item = Result<$info_ty>;
 
             fn next(&mut self) -> Option<Self::Item> {
                 let fd = match self.get_next_valid_fd() {
-                    Some(fd) => fd,
-                    None => return None,
+                    Ok(Some(fd)) => fd,
+                    Ok(None) => return None,
+                    Err(e) => return Some(Err(e)),
                 };
 
                 let mut item = <$uapi_info_ty>::default();
@@ -68,9 +75,9 @@ macro_rules! gen_info_impl {
                 let ret = unsafe { libbpf_sys::bpf_obj_get_info_by_fd(fd, item_ptr as *mut c_void, &mut len) };
                 let _ = close(fd);
                 if ret != 0 {
-                    return None
+                    Some(Err(Error::System(errno::errno())))
                 } else {
-                    Some(<$info_ty>::from_uapi(item))
+                    Some(Ok(<$info_ty>::from_uapi(item)))
                 }
 
             }
