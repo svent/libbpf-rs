@@ -1,3 +1,4 @@
+use std::cmp::{max, min};
 use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::mem::size_of;
@@ -69,6 +70,112 @@ impl<'a> Btf<'a> {
         }
 
         Ok(btf)
+    }
+
+    pub fn types(&self) -> &[BtfType<'a>] {
+        &self.types
+    }
+
+    pub fn type_by_id(&self, type_id: u32) -> Option<&BtfType> {
+        if (type_id as usize) < self.types.len() {
+            Some(&self.types[type_id as usize])
+        } else {
+            None
+        }
+    }
+
+    pub fn size_of(&self, type_id: u32) -> Option<u32> {
+        if let Some(t) = self.type_by_id(type_id) {
+            Some(match t {
+                BtfType::Void => 0,
+                BtfType::Int(t) => ((t.bits + 7) / 8).into(),
+                BtfType::Volatile(t) => return self.size_of(t.type_id),
+                BtfType::Const(t) => return self.size_of(t.type_id),
+                BtfType::Restrict(t) => return self.size_of(t.type_id),
+                BtfType::Ptr(_) => self.ptr_size,
+                BtfType::Array(t) => match self.size_of(t.val_type_id) {
+                    Some(s) => t.nelems * s,
+                    None => return None,
+                },
+                BtfType::FuncProto(_) => 0,
+                BtfType::Struct(t) => t.size,
+                BtfType::Union(t) => t.size,
+                BtfType::Enum(t) => t.size,
+                BtfType::Fwd(_) => 0,
+                BtfType::Typedef(t) => return self.size_of(t.type_id),
+                BtfType::Func(_) => 0,
+                BtfType::Var(_) => 0,
+                BtfType::Datasec(t) => t.size,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn align_of(&self, type_id: u32) -> Option<u32> {
+        if let Some(t) = self.type_by_id(type_id) {
+            Some(match t {
+                BtfType::Void => 0,
+                BtfType::Int(t) => min(self.ptr_size, ((t.bits + 7) / 8).into()),
+                BtfType::Volatile(t) => return self.align_of(t.type_id),
+                BtfType::Const(t) => return self.align_of(t.type_id),
+                BtfType::Restrict(t) => return self.align_of(t.type_id),
+                BtfType::Ptr(_) => self.ptr_size,
+                BtfType::Array(t) => return self.align_of(t.val_type_id),
+                BtfType::FuncProto(_) => 0,
+                BtfType::Struct(t) | BtfType::Union(t) => {
+                    let mut align = 1;
+                    for m in &t.members {
+                        if let Some(a) = self.align_of(m.type_id) {
+                            align = max(align, a);
+                        } else {
+                            return None;
+                        }
+                    }
+
+                    align
+                }
+                BtfType::Enum(t) => min(self.ptr_size, t.size),
+                BtfType::Fwd(_) => 0,
+                BtfType::Typedef(t) => return self.align_of(t.type_id),
+                BtfType::Func(_) => 0,
+                BtfType::Var(_) => 0,
+                BtfType::Datasec(_) => 0,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn skip_mods(&self, mut type_id: u32) -> Option<u32> {
+        loop {
+            if let Some(t) = self.type_by_id(type_id) {
+                match t {
+                    BtfType::Volatile(t) => type_id = t.type_id,
+                    BtfType::Const(t) => type_id = t.type_id,
+                    BtfType::Restrict(t) => type_id = t.type_id,
+                    _ => return Some(type_id),
+                };
+            } else {
+                return None;
+            }
+        }
+    }
+
+    pub fn skip_mods_and_typedefs(&self, mut type_id: u32) -> Option<u32> {
+        loop {
+            if let Some(t) = self.type_by_id(type_id) {
+                match t {
+                    BtfType::Volatile(t) => type_id = t.type_id,
+                    BtfType::Const(t) => type_id = t.type_id,
+                    BtfType::Restrict(t) => type_id = t.type_id,
+                    BtfType::Typedef(t) => type_id = t.type_id,
+                    _ => return Some(type_id),
+                };
+            } else {
+                return None;
+            }
+        }
     }
 
     fn load_type(&self, data: &'a [u8]) -> Result<BtfType<'a>> {
