@@ -25,6 +25,7 @@ anyhow = "1.0"
 cargo_metadata = "0.9"
 libbpf-sys = { version = "0.1.0-1" }
 num_enum = "0.5"
+object = "0.23"
 regex = "1.4"
 scroll = "0.10"
 scroll_derive = "0.10"
