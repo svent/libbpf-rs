@@ -23,7 +23,7 @@ pub fn make(
     if !quiet {
         println!("Generating skeletons");
     }
-    ret = gen::gen(debug, manifest_path);
+    ret = gen::gen(debug, manifest_path, None);
     if ret != 0 {
         eprintln!("Failed to generate skeletons");
         return ret;

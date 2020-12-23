@@ -81,6 +81,11 @@ enum Command {
         #[structopt(long, parse(from_os_str))]
         /// Path to top level Cargo.toml
         manifest_path: Option<PathBuf>,
+        #[structopt(long, parse(from_os_str))]
+        /// Generate skeleton for the specified object file and print results to stdout
+        ///
+        /// When specified, skeletons for the rest of the project will not be generated
+        object: Option<PathBuf>,
     },
     Make {
         #[structopt(short, long)]
@@ -124,7 +129,8 @@ fn main() {
             Command::Gen {
                 debug,
                 manifest_path,
-            } => gen::gen(debug, manifest_path.as_ref()),
+                object,
+            } => gen::gen(debug, manifest_path.as_ref(), object.as_ref()),
             Command::Make {
                 debug,
                 manifest_path,
